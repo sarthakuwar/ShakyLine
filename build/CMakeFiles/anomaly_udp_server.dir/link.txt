@@ -1,0 +1,1 @@
+/usr/bin/c++ -Wl,--dependency-file=CMakeFiles/anomaly_udp_server.dir/link.d CMakeFiles/anomaly_udp_server.dir/src/TestUDPServer.cpp.o -o anomaly_udp_server

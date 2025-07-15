@@ -1,0 +1,5 @@
+/usr/local/bin/anomaly_tcp
+/usr/local/bin/anomaly_udp
+/usr/local/bin/anomaly_tcp_server
+/usr/local/bin/anomaly_udp_server
+/usr/local/bin/anomaly_threaded_tcp_server

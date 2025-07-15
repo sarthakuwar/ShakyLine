@@ -1,0 +1,7 @@
+{
+	"InstallScripts" : 
+	[
+		"/home/sarthak/dev/anamoly-client/build/cmake_install.cmake"
+	],
+	"Parallel" : false
+}

@@ -1,0 +1,11 @@
+/home/sarthak/dev/anamoly-client/build/CMakeFiles/anomaly_tcp.dir
+/home/sarthak/dev/anamoly-client/build/CMakeFiles/anomaly_udp.dir
+/home/sarthak/dev/anamoly-client/build/CMakeFiles/anomaly_tcp_server.dir
+/home/sarthak/dev/anamoly-client/build/CMakeFiles/anomaly_udp_server.dir
+/home/sarthak/dev/anamoly-client/build/CMakeFiles/anomaly_threaded_tcp_server.dir
+/home/sarthak/dev/anamoly-client/build/CMakeFiles/edit_cache.dir
+/home/sarthak/dev/anamoly-client/build/CMakeFiles/rebuild_cache.dir
+/home/sarthak/dev/anamoly-client/build/CMakeFiles/list_install_components.dir
+/home/sarthak/dev/anamoly-client/build/CMakeFiles/install.dir
+/home/sarthak/dev/anamoly-client/build/CMakeFiles/install/local.dir
+/home/sarthak/dev/anamoly-client/build/CMakeFiles/install/strip.dir

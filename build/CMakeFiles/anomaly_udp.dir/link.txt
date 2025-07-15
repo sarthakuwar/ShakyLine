@@ -1,0 +1,1 @@
+/usr/bin/c++ -Wl,--dependency-file=CMakeFiles/anomaly_udp.dir/link.d CMakeFiles/anomaly_udp.dir/src/UDPAnomalyClient.cpp.o CMakeFiles/anomaly_udp.dir/src/main_udp.cpp.o -o anomaly_udp

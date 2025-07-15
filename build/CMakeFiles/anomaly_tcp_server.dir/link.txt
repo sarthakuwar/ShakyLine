@@ -1,0 +1,1 @@
+/usr/bin/c++ -Wl,--dependency-file=CMakeFiles/anomaly_tcp_server.dir/link.d CMakeFiles/anomaly_tcp_server.dir/src/TestServer.cpp.o -o anomaly_tcp_server
