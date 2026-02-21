@@ -1,24 +1,54 @@
-cmake_minimum_required(VERSION 3.10)
-project(anomaly_client)
+cmake_minimum_required(VERSION 3.14)
+project(shakyline VERSION 1.0.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-include_directories(include)
+# Standalone Asio via FetchContent
+include(FetchContent)
+FetchContent_Declare(
+    asio
+    GIT_REPOSITORY https://github.com/chriskohlhoff/asio.git
+    GIT_TAG asio-1-28-0
+)
+FetchContent_MakeAvailable(asio)
 
-add_executable(anomaly_tcp
-    src/TCPAnomalyClient.cpp
-    src/main_tcp.cpp
+# Platform-specific definitions
+if(WIN32)
+    add_compile_definitions(_WIN32_WINNT=0x0A00)
+endif()
+
+# Main executable
+add_executable(shakyline
+    src/main.cpp
+    src/Socket.cpp
+    src/Buffer.cpp
+    src/DelayQueue.cpp
+    src/EventLoop.cpp
+    src/Scheduler.cpp
+    src/Session.cpp
+    src/SessionManager.cpp
+    src/ProxyServer.cpp
+    src/AnomalyEngine.cpp
+    src/Config.cpp
+    src/MetricsRegistry.cpp
+    src/ControlServer.cpp
+    src/Logger.cpp
 )
 
-add_executable(anomaly_udp
-    src/UDPAnomalyClient.cpp
-    src/main_udp.cpp
+target_include_directories(shakyline PRIVATE
+    ${CMAKE_SOURCE_DIR}/include
+    ${asio_SOURCE_DIR}/asio/include
 )
 
-add_executable(anomaly_tcp_server src/TestServer.cpp)
-add_executable(anomaly_udp_server src/TestUDPServer.cpp)
-add_executable(anomaly_threaded_tcp_server src/ThreadedTCPServer.cpp)
+target_compile_definitions(shakyline PRIVATE ASIO_STANDALONE)
 
-install(TARGETS anomaly_tcp anomaly_udp anomaly_tcp_server anomaly_udp_server anomaly_threaded_tcp_server
-    RUNTIME DESTINATION bin
-)
+if(MSVC)
+    target_compile_options(shakyline PRIVATE /W4 /WX)
+else()
+    target_compile_options(shakyline PRIVATE -Wall -Wextra -Werror -pedantic)
+endif()
+
+# Install
+install(TARGETS shakyline RUNTIME DESTINATION bin)

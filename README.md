@@ -1,151 +1,137 @@
+# ShakyLine — Programmable Network Fault Injection Proxy
 
+A **production-quality cross-platform TCP proxy** for deterministic network fault injection, built with C++17 and standalone Asio.
 
-## 🧪 Anomaly Client Toolkit
+## Features
 
-### ⚡ Simulate real-world network conditions (TCP/UDP) for testing server robustness.
+- **Reactor pattern** with strand-per-session serialization
+- **Deterministic fault injection** using SplitMix64 RNG
+- **Directional profiles** — inject faults asymmetrically (client→server / server→client)
+- **Runtime control API** — update profiles without restart
+- **Prometheus metrics** — counters and histograms
+- **4-way half-close** — correct TCP shutdown semantics
+- **Backpressure handling** — high/low watermarks
+- **Graceful shutdown** — drain buffers before closing
 
----
+## Fault Types
 
-### 📦 Features
+| Fault | Description |
+|-------|-------------|
+| Latency | Add fixed delay (ms) |
+| Jitter | Add random delay variance |
+| Drop | Discard packets |
+| Throttle | Limit bandwidth (kbps) |
+| Corrupt | XOR random byte |
+| Stall | Stop reading temporarily |
+| Half-close | Initiate FIN |
 
-* ✅ TCP & UDP anomaly injection clients
-* 🔁 Custom TCP handshake (`SYN → SYN-CUSTACK → ACK-CUSTOM`)
-* 🧱 Simulates:
-
-  * Packet **loss**
-  * Packet **corruption**
-  * **Duplication**
-  * **Out-of-order** delivery (TCP only)
-  * Artificial **delay**
-* 🔀 Multi-threaded TCP server for concurrent testing
-* 🧰 Simple CLI-based usage for integration into test pipelines
-
----
-
-## 🛠️ Build Instructions
-
-### Requirements
-
-* CMake ≥ 3.10
-* g++ or clang++
-* Linux/macOS
-
-### Build
+## Build
 
 ```bash
-git clone https://github.com/yourusername/anomaly-client-toolkit.git
-cd anomaly-client-toolkit
 mkdir build && cd build
-cmake ..
-make
-sudo make install  # optional: installs binaries to /usr/local/bin
+cmake .. -DCMAKE_BUILD_TYPE=Release
+cmake --build .
 ```
 
----
+**Requirements:**
+- CMake 3.14+
+- C++17 compiler (GCC 9+, Clang 10+, MSVC 2019+)
 
-## 🚀 CLI Tools
-
-| Binary                        | Description                          |
-| ----------------------------- | ------------------------------------ |
-| `anomaly_tcp`                 | TCP anomaly injection client         |
-| `anomaly_udp`                 | UDP anomaly injection client         |
-| `anomaly_tcp_server`          | Basic TCP echo server with handshake |
-| `anomaly_udp_server`          | Basic UDP echo server                |
-| `anomaly_threaded_tcp_server` | Multi-client threaded TCP server     |
-
----
-
-## 🧪 Example Usage
-
-### 1. Start the Test Server
+## Usage
 
 ```bash
-anomaly_threaded_tcp_server
+./shakyline --listen 0.0.0.0:8080 --upstream api.example.com:443 --control 9090 --seed 12345
 ```
 
-Or:
+### Command Line Options
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `--listen HOST:PORT` | Listen address | 0.0.0.0:8080 |
+| `--upstream HOST:PORT` | Upstream target | 127.0.0.1:9000 |
+| `--control PORT` | Control API port | 9090 |
+| `--seed NUMBER` | RNG seed | random |
+
+## Control API
+
+### Update Profile
 
 ```bash
-anomaly_udp_server
+curl -X POST http://localhost:9090/profiles/default \
+  -H "Content-Type: application/json" \
+  -d '{
+    "c2s_latency_ms": 200,
+    "c2s_drop_rate": 0.05,
+    "s2c_latency_ms": 100
+  }'
 ```
 
----
-
-### 2. Run TCP Anomaly Client
+### Get Metrics
 
 ```bash
-anomaly_tcp -l 0.3 -c -d -o -t 200
+curl http://localhost:9090/metrics
 ```
 
-**Flags:**
-
-| Flag        | Description                        |
-| ----------- | ---------------------------------- |
-| `-l <rate>` | Packet loss rate (e.g., 0.2 = 20%) |
-| `-c`        | Corrupt data                       |
-| `-d`        | Duplicate packets                  |
-| `-o`        | Out-of-order send (TCP only)       |
-| `-t <ms>`   | Add delay before each packet       |
-| `-f`        | Custom TCP handshake override      |
-| `-h <host>` | Server IP (default: 127.0.0.1)     |
-| `-p <port>` | Server port (default: 12345)       |
-
----
-
-### 3. Run UDP Anomaly Client
+### List Sessions
 
 ```bash
-anomaly_udp -l 0.5 -c -d -t 100
+curl http://localhost:9090/sessions
 ```
 
----
+### Health Check
 
-## 🧰 Sample Output
-
-**Client:**
-
-```
-[+] Connected to server.
-[>] Sent: SYN
-[<] Server: SYN-CUSTACK
-[>] Sent: ACK-CUSTOM
-[>] Sent: Hello
-[!] Packet dropped (simulated): Hello
-[!] Duplicate packet sent
+```bash
+curl http://localhost:9090/health
 ```
 
-**Server:**
+### Delete Profile
 
-```
-🚀 TCP Server listening on port 12345...
-[+] Client connected!
-[<] Received: SYN
-[<] Received: ACK-CUSTOM
-[<] Received: Hello
-[<] Received: Hello
+```bash
+curl -X DELETE http://localhost:9090/profiles/default
 ```
 
----
+## Profile Fields
 
-## 🧪 Use Cases
+| Field | Type | Description |
+|-------|------|-------------|
+| `c2s_latency_ms` | uint32 | Client→Server latency |
+| `c2s_jitter_ms` | uint32 | Client→Server jitter |
+| `c2s_drop_rate` | float | Client→Server drop probability (0-1) |
+| `c2s_throttle_kbps` | uint32 | Client→Server bandwidth limit |
+| `c2s_stall_prob` | float | Client→Server stall probability |
+| `s2c_*` | - | Same fields for Server→Client |
+| `latency_ms` | uint32 | Both directions (convenience) |
+| `drop_rate` | float | Both directions (convenience) |
 
-* Stress testing your server under unreliable network conditions
-* Verifying retry logic and fault tolerance
-* Integration with CI/CD testing pipelines
-* Educational tool for learning TCP/UDP robustness
+## Architecture
 
----
+```
+Client ─────┐
+            │
+            ▼
+    ┌───────────────┐
+    │  ProxyServer  │◄── Accept loop
+    └───────┬───────┘
+            │
+            ▼
+    ┌───────────────┐
+    │    Session    │◄── Strand-serialized
+    │ ┌───────────┐ │
+    │ │ ReadBuf   │ │    3-tier buffer:
+    │ │ DelayQueue│ │    Read → Delay → Write
+    │ │ WriteBuf  │ │
+    │ └───────────┘ │
+    └───────┬───────┘
+            │
+            ▼
+    ┌───────────────┐
+    │ AnomalyEngine │◄── Deterministic RNG
+    └───────────────┘
+            │
+            ▼
+       Upstream Server
+```
 
-## 🤝 Contributing
+## License
 
-Feel free to submit PRs to:
-
-* Add configurable test message files
-* Improve corruption logic
-* Support for TLS/QUIC
-* Metrics and logging
-
----
-
-
-
+MIT
