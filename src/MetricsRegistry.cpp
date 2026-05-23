@@ -4,41 +4,41 @@
 namespace shakyline {
 
 Histogram::Histogram(std::string name, std::vector<uint64_t> bucketBounds)
-    : name_(std::move(name)) {
-    // reserve() pre-allocates without constructing, so the vector never
-    // reallocates later. emplace_back() constructs each HistogramBucket
-    // in-place — avoiding any move/copy of std::atomic (which is deleted).
-    buckets_.reserve(bucketBounds.size());
-    for (uint64_t bound : bucketBounds) {
-        buckets_.emplace_back();
-        buckets_.back().upperBound = bound;
-        buckets_.back().count.store(0);
+    : name_(std::move(name)), numBuckets_(bucketBounds.size()) {
+    // new[] default-constructs each HistogramBucket in-place.
+    // std::atomic is default-constructible but not movable/copyable, so
+    // std::vector cannot be used here (GCC 13 instantiates move paths even
+    // for reserve()). unique_ptr<T[]> sidesteps this entirely.
+    buckets_ = std::make_unique<HistogramBucket[]>(numBuckets_);
+    for (std::size_t i = 0; i < numBuckets_; ++i) {
+        buckets_[i].upperBound = bucketBounds[i];
+        buckets_[i].count.store(0);
     }
 }
 
 void Histogram::observe(uint64_t value) {
     sum_.fetch_add(value);
     count_.fetch_add(1);
-    
-    for (auto& bucket : buckets_) {
-        if (value <= bucket.upperBound) {
-            bucket.count.fetch_add(1);
+
+    for (std::size_t i = 0; i < numBuckets_; ++i) {
+        if (value <= buckets_[i].upperBound) {
+            buckets_[i].count.fetch_add(1);
         }
     }
 }
 
 std::string Histogram::renderPrometheus(const std::string& prefix) const {
     std::ostringstream oss;
-    
-    for (const auto& bucket : buckets_) {
-        oss << prefix << "_" << name_ << "_bucket{le=\"" << bucket.upperBound << "\"} "
-            << bucket.count.load() << "\n";
+
+    for (std::size_t i = 0; i < numBuckets_; ++i) {
+        oss << prefix << "_" << name_ << "_bucket{le=\"" << buckets_[i].upperBound << "\"} "
+            << buckets_[i].count.load() << "\n";
     }
-    oss << prefix << "_" << name_ << "_bucket{le=\"+Inf\"} " 
+    oss << prefix << "_" << name_ << "_bucket{le=\"+Inf\"} "
         << count_.load() << "\n";
     oss << prefix << "_" << name_ << "_sum " << sum_.load() << "\n";
     oss << prefix << "_" << name_ << "_count " << count_.load() << "\n";
-    
+
     return oss.str();
 }
 

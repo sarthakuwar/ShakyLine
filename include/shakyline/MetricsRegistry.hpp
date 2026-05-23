@@ -28,7 +28,11 @@ public:
 
 private:
     std::string name_;
-    std::vector<HistogramBucket> buckets_;  // HistogramBucket wraps atomic — non-movable; reserve()+emplace_back() avoids any move/copy
+    // std::vector cannot hold non-movable types (GCC 13 instantiates move
+    // paths even for reserve()). A raw array via unique_ptr works because
+    // new[] default-constructs each element in-place — no move/copy needed.
+    std::unique_ptr<HistogramBucket[]> buckets_;
+    std::size_t numBuckets_{0};
     std::atomic<uint64_t> sum_{0};
     std::atomic<uint64_t> count_{0};
 };
