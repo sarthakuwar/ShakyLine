@@ -336,7 +336,7 @@ void Session::scheduleDelayFlush() {
 
     delayTimerId_ = scheduler_.scheduleGuarded(
         delay, weak_from_this(),
-        [](Session::Ptr self) { self->onDelayExpired(); }
+        std::function<void(Session::Ptr)>([](Session::Ptr self) { self->onDelayExpired(); })
     );
 }
 
@@ -520,8 +520,8 @@ void Session::initiateShutdown() {
     clientSocket_.cancelPending();
     serverSocket_.cancelPending();
     
-    // Flush remaining data with dynamic linger
-    auto pendingBytes = clientToServerBuf_.readable() + serverToClientBuf_.readable() +
+    // Flush remaining data with dynamic linger (pending byte count logged for diagnostics)
+    [[maybe_unused]] auto pendingBytes = clientToServerBuf_.readable() + serverToClientBuf_.readable() +
                        clientToServerDelay_.totalBytes() + serverToClientDelay_.totalBytes();
     
     // Simple linger - just close after flushing what we can
@@ -552,7 +552,7 @@ void Session::resetIdleTimer() {
     idleTimerId_ = scheduler_.scheduleGuarded(
         config_.serverConfig().idleTimeout,
         weak_from_this(),
-        [](Session::Ptr self) { self->onIdleTimeout(); }
+        std::function<void(Session::Ptr)>([](Session::Ptr self) { self->onIdleTimeout(); })
     );
 }
 

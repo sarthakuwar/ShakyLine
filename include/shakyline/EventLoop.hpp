@@ -2,6 +2,7 @@
 
 #include <asio.hpp>
 #include <atomic>
+#include <optional>
 #include <thread>
 
 namespace shakyline {
