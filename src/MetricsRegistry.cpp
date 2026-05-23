@@ -5,11 +5,14 @@ namespace shakyline {
 
 Histogram::Histogram(std::string name, std::vector<uint64_t> bucketBounds)
     : name_(std::move(name)) {
-    // Pre-size so the vector never reallocates (std::atomic is non-movable)
-    buckets_.resize(bucketBounds.size());
-    for (std::size_t i = 0; i < bucketBounds.size(); ++i) {
-        buckets_[i].upperBound = bucketBounds[i];
-        buckets_[i].count.store(0);
+    // reserve() pre-allocates without constructing, so the vector never
+    // reallocates later. emplace_back() constructs each HistogramBucket
+    // in-place — avoiding any move/copy of std::atomic (which is deleted).
+    buckets_.reserve(bucketBounds.size());
+    for (uint64_t bound : bucketBounds) {
+        buckets_.emplace_back();
+        buckets_.back().upperBound = bound;
+        buckets_.back().count.store(0);
     }
 }
 

@@ -28,7 +28,7 @@ public:
 
 private:
     std::string name_;
-    std::vector<HistogramBucket> buckets_;  // HistogramBucket wraps atomic — non-movable, pre-sized
+    std::vector<HistogramBucket> buckets_;  // HistogramBucket wraps atomic — non-movable; reserve()+emplace_back() avoids any move/copy
     std::atomic<uint64_t> sum_{0};
     std::atomic<uint64_t> count_{0};
 };
