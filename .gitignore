@@ -1,7 +1,52 @@
+# Build directories
 build/
-*.o
-*.log
+dist/
+
+# CMake artefacts
 CMakeFiles/
 CMakeCache.txt
 cmake_install.cmake
 Makefile
+*.cmake
+!CMakeLists.txt
+
+# Compiled objects
+*.o
+*.obj
+*.a
+*.lib
+*.pdb
+
+# Binaries
+*.exe
+*.out
+
+# CPack output
+*.zip
+*.tar.gz
+*.tar.bz2
+*.nsis
+CPackConfig.cmake
+CPackSourceConfig.cmake
+_CPack_Packages/
+
+# Logs
+*.log
+
+# IDE / editor files
+.vscode/
+.idea/
+*.user
+*.suo
+*.sln.docstates
+*.ncb
+*.aps
+
+# clangd / compile commands (keep compile_commands.json if you want)
+.cache/
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db

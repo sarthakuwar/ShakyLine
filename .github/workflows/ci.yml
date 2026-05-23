@@ -1,0 +1,71 @@
+name: CI
+
+on:
+  push:
+    branches: [ "main", "master", "develop" ]
+  pull_request:
+    branches: [ "main", "master" ]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+        include:
+          - os: windows-latest
+            cmake_generator: "-G \"Visual Studio 17 2022\" -A x64"
+            artifact_name: shakyline-windows-x64
+          - os: ubuntu-latest
+            cmake_generator: ""
+            artifact_name: shakyline-linux-x64
+          - os: macos-latest
+            cmake_generator: ""
+            artifact_name: shakyline-macos-x64
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Read version
+        id: version
+        shell: bash
+        run: echo "version=$(cat VERSION | tr -d '[:space:]')" >> $GITHUB_OUTPUT
+
+      - name: Configure CMake (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          cmake -B build ${{ matrix.cmake_generator }} -DCMAKE_BUILD_TYPE=Release
+
+      - name: Configure CMake (Unix)
+        if: runner.os != 'Windows'
+        run: |
+          cmake -B build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build --config Release --parallel
+
+      - name: Smoke test — version flag (Windows)
+        if: runner.os == 'Windows'
+        run: build\Release\shakyline.exe --version
+
+      - name: Smoke test — version flag (Unix)
+        if: runner.os != 'Windows'
+        run: ./build/shakyline --version
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: |
+            build/Release/shakyline.exe
+            build/shakyline
+          if-no-files-found: ignore
+          retention-days: 7

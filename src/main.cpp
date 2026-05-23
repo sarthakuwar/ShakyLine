@@ -25,14 +25,15 @@ namespace {
     }
 
     void printUsage(const char* prog) {
-        std::cout << "ShakyLine v1.0 - Programmable Network Fault Injection Proxy\n\n"
+        std::cout << "ShakyLine " << SHAKYLINE_VERSION << " - Programmable Network Fault Injection Proxy\n\n"
                   << "Usage: " << prog << " [OPTIONS]\n\n"
                   << "Options:\n"
                   << "  --listen HOST:PORT     Listen address (default: 0.0.0.0:8080)\n"
                   << "  --upstream HOST:PORT   Upstream target (default: 127.0.0.1:9000)\n"
                   << "  --control PORT         Control API port (default: 9090)\n"
                   << "  --seed NUMBER          Global RNG seed (default: random)\n"
-                  << "  --help                 Show this help\n\n"
+                  << "  --version, -v          Print version and exit\n"
+                  << "  --help, -h             Show this help\n\n"
                   << "Control API:\n"
                   << "  POST /profiles/{name}  Update anomaly profile\n"
                   << "  DELETE /profiles/{name} Delete profile\n"
@@ -66,6 +67,10 @@ int main(int argc, char* argv[]) {
             printUsage(argv[0]);
             return 0;
         }
+        else if (arg == "--version" || arg == "-v") {
+            std::cout << "shakyline " << SHAKYLINE_VERSION << "\n";
+            return 0;
+        }
         else if (arg == "--listen" && i + 1 < argc) {
             parseHostPort(argv[++i], config.listenHost, config.listenPort);
         }
@@ -91,7 +96,7 @@ int main(int argc, char* argv[]) {
     }
 
     std::cout << "╔═══════════════════════════════════════════════════════╗\n"
-              << "║       ShakyLine - Fault Injection Proxy v1.0          ║\n"
+              << "║       ShakyLine " << SHAKYLINE_VERSION << " - Fault Injection Proxy        ║\n"
               << "╚═══════════════════════════════════════════════════════╝\n\n";
 
     std::cout << "Configuration:\n"

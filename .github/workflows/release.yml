@@ -1,0 +1,127 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: write   # needed to create GitHub Releases
+
+jobs:
+  # ─── Windows: Build + ZIP + NSIS Installer ────────────────────────────────
+  build-windows:
+    name: Build & Package (Windows)
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Read version from tag
+        id: version
+        shell: bash
+        run: |
+          # Strip the leading 'v' from the tag name
+          VERSION="${GITHUB_REF_NAME#v}"
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "tag=${GITHUB_REF_NAME}" >> $GITHUB_OUTPUT
+
+      - name: Install NSIS
+        run: choco install nsis --no-progress -y
+
+      - name: Configure CMake
+        run: |
+          cmake -B build -G "Visual Studio 17 2022" -A x64 -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build --config Release --parallel
+
+      - name: Smoke test
+        run: build\Release\shakyline.exe --version
+
+      - name: Run CPack (ZIP + NSIS)
+        working-directory: build
+        run: cpack -C Release -G "ZIP;NSIS"
+
+      - name: Rename packages with version
+        shell: bash
+        working-directory: build
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          for f in ShakyLine-*.zip ShakyLine-*.exe; do
+            [ -f "$f" ] || continue
+            EXT="${f##*.}"
+            mv "$f" "shakyline-${VERSION}-windows-x64.${EXT}"
+          done
+
+      - name: Compute SHA256 checksums
+        shell: bash
+        working-directory: build
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          sha256sum shakyline-${VERSION}-windows-x64.zip \
+                    shakyline-${VERSION}-windows-x64.exe \
+            > shakyline-${VERSION}-windows-checksums.txt
+          cat shakyline-${VERSION}-windows-checksums.txt
+
+      - name: Upload Windows artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-packages
+          path: |
+            build/shakyline-*-windows-x64.zip
+            build/shakyline-*-windows-x64.exe
+            build/shakyline-*-windows-checksums.txt
+
+  # ─── Create GitHub Release ─────────────────────────────────────────────────
+  release:
+    name: Create GitHub Release
+    needs: [build-windows]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Read version from tag
+        id: version
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "tag=${GITHUB_REF_NAME}" >> $GITHUB_OUTPUT
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist/
+
+      - name: List dist contents
+        run: find dist/ -type f | sort
+
+      - name: Extract changelog for this version
+        id: changelog
+        run: |
+          # Pull the section between this version's heading and the next
+          VERSION="${{ steps.version.outputs.version }}"
+          NOTES=$(awk "/^## \[${VERSION}\]/{found=1; next} found && /^## \[/{exit} found{print}" CHANGELOG.md)
+          if [ -z "$NOTES" ]; then
+            NOTES="See [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md) for details."
+          fi
+          # Write to a file (avoids shell quoting issues)
+          printf '%s' "$NOTES" > release_notes.txt
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: "ShakyLine ${{ steps.version.outputs.tag }}"
+          body_path: release_notes.txt
+          draft: false
+          prerelease: ${{ contains(steps.version.outputs.tag, '-') }}
+          files: |
+            dist/windows-packages/shakyline-*-windows-x64.zip
+            dist/windows-packages/shakyline-*-windows-x64.exe
+            dist/windows-packages/shakyline-*-windows-checksums.txt
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
