@@ -10,7 +10,7 @@ message(STATUS "ShakyLine version: ${SHAKYLINE_VERSION_STRING}")
 
 project(shakyline VERSION ${SHAKYLINE_VERSION_STRING} LANGUAGES CXX)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
@@ -57,7 +57,7 @@ target_compile_definitions(shakyline PRIVATE
 )
 
 if(MSVC)
-    target_compile_options(shakyline PRIVATE /W4 /WX)
+    target_compile_options(shakyline PRIVATE /W4 /WX /utf-8)
 else()
     target_compile_options(shakyline PRIVATE -Wall -Wextra -Werror -pedantic)
 endif()

@@ -7,8 +7,7 @@ ProxyServer::ProxyServer(
     asio::io_context& io,
     SessionManager::Ptr sessionManager,
     const ServerConfig& config
-) : io_(io)
-  , acceptor_(io)
+) : acceptor_(io)
   , sessionManager_(std::move(sessionManager))
   , config_(config)
 {}

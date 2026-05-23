@@ -18,7 +18,7 @@ bool Socket::isOpen() const noexcept {
 }
 
 Socket::tcp::socket::native_handle_type Socket::native() const noexcept {
-    return socket_.native_handle();
+    return const_cast<tcp::socket&>(socket_).native_handle();
 }
 
 void Socket::setNoDelay(bool enable) {

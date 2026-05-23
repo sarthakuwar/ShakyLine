@@ -40,7 +40,6 @@ private:
     void doAccept();
     void onAccept(const asio::error_code& ec, asio::ip::tcp::socket socket);
 
-    asio::io_context& io_;
     asio::ip::tcp::acceptor acceptor_;
     SessionManager::Ptr sessionManager_;
     ServerConfig config_;
