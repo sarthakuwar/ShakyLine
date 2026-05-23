@@ -39,6 +39,10 @@ jobs:
         shell: bash
         run: echo "version=$(cat VERSION | tr -d '[:space:]')" >> $GITHUB_OUTPUT
 
+      - name: Remove stale CMake cache (if build/ was committed)
+        shell: bash
+        run: rm -rf build/
+
       - name: Configure CMake (Windows)
         if: runner.os == 'Windows'
         run: |

@@ -30,6 +30,10 @@ jobs:
       - name: Install NSIS
         run: choco install nsis --no-progress -y
 
+      - name: Remove stale CMake cache (if build/ was committed)
+        shell: bash
+        run: rm -rf build/
+
       - name: Configure CMake
         run: |
           cmake -B build -G "Visual Studio 17 2022" -A x64 -DCMAKE_BUILD_TYPE=Release
