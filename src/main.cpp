@@ -49,11 +49,11 @@ namespace {
     bool parseHostPort(const std::string& arg, std::string& host, uint16_t& port) {
         auto pos = arg.find(':');
         if (pos == std::string::npos) {
-            port = std::stoi(arg);
+            port = static_cast<uint16_t>(std::stoi(arg));
             return true;
         }
         host = arg.substr(0, pos);
-        port = std::stoi(arg.substr(pos + 1));
+        port = static_cast<uint16_t>(std::stoi(arg.substr(pos + 1)));
         return true;
     }
 }
@@ -80,7 +80,7 @@ int main(int argc, char* argv[]) {
             parseHostPort(argv[++i], config.upstreamHost, config.upstreamPort);
         }
         else if (arg == "--control" && i + 1 < argc) {
-            config.controlPort = std::stoi(argv[++i]);
+            config.controlPort = static_cast<uint16_t>(std::stoi(argv[++i]));
         }
         else if (arg == "--seed" && i + 1 < argc) {
             config.globalSeed = std::stoull(argv[++i]);

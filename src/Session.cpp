@@ -336,7 +336,7 @@ void Session::scheduleDelayFlush() {
 
     delayTimerId_ = scheduler_.scheduleGuarded(
         delay, weak_from_this(),
-        std::function<void(Session::Ptr)>([](Session::Ptr self) { self->onDelayExpired(); })
+        [](Session::Ptr self) { self->onDelayExpired(); }
     );
 }
 
@@ -552,7 +552,7 @@ void Session::resetIdleTimer() {
     idleTimerId_ = scheduler_.scheduleGuarded(
         config_.serverConfig().idleTimeout,
         weak_from_this(),
-        std::function<void(Session::Ptr)>([](Session::Ptr self) { self->onIdleTimeout(); })
+        [](Session::Ptr self) { self->onIdleTimeout(); }
     );
 }
 

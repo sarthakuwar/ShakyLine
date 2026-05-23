@@ -30,11 +30,11 @@ public:
     TimerId schedule(std::chrono::milliseconds delay, Callback cb);
 
     /// Schedule with a guard - callback only fires if guard is still valid
-    template<typename T>
+    template<typename T, typename F>
     TimerId scheduleGuarded(std::chrono::milliseconds delay,
                             std::weak_ptr<T> guard,
-                            std::function<void(std::shared_ptr<T>)> cb) {
-        return schedule(delay, [guard = std::move(guard), cb = std::move(cb)]() {
+                            F&& cb) {
+        return schedule(delay, [guard = std::move(guard), cb = std::forward<F>(cb)]() {
             if (auto locked = guard.lock()) {
                 cb(std::move(locked));
             }

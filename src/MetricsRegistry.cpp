@@ -5,8 +5,11 @@ namespace shakyline {
 
 Histogram::Histogram(std::string name, std::vector<uint64_t> bucketBounds)
     : name_(std::move(name)) {
-    for (auto bound : bucketBounds) {
-        buckets_.emplace_back(bound, std::atomic<uint64_t>{0});
+    // Pre-size so the vector never reallocates (std::atomic is non-movable)
+    buckets_.resize(bucketBounds.size());
+    for (std::size_t i = 0; i < bucketBounds.size(); ++i) {
+        buckets_[i].upperBound = bucketBounds[i];
+        buckets_[i].count.store(0);
     }
 }
 
@@ -14,9 +17,9 @@ void Histogram::observe(uint64_t value) {
     sum_.fetch_add(value);
     count_.fetch_add(1);
     
-    for (auto& [bound, count] : buckets_) {
-        if (value <= bound) {
-            count.fetch_add(1);
+    for (auto& bucket : buckets_) {
+        if (value <= bucket.upperBound) {
+            bucket.count.fetch_add(1);
         }
     }
 }
@@ -24,9 +27,9 @@ void Histogram::observe(uint64_t value) {
 std::string Histogram::renderPrometheus(const std::string& prefix) const {
     std::ostringstream oss;
     
-    for (const auto& [bound, count] : buckets_) {
-        oss << prefix << "_" << name_ << "_bucket{le=\"" << bound << "\"} "
-            << count.load() << "\n";
+    for (const auto& bucket : buckets_) {
+        oss << prefix << "_" << name_ << "_bucket{le=\"" << bucket.upperBound << "\"} "
+            << bucket.count.load() << "\n";
     }
     oss << prefix << "_" << name_ << "_bucket{le=\"+Inf\"} " 
         << count_.load() << "\n";

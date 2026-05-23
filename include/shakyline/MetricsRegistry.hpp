@@ -3,6 +3,7 @@
 #include <atomic>
 #include <array>
 #include <cstdint>
+#include <memory>
 #include <mutex>
 #include <sstream>
 #include <string>
@@ -27,7 +28,7 @@ public:
 
 private:
     std::string name_;
-    std::vector<std::pair<uint64_t, std::atomic<uint64_t>>> buckets_;
+    std::vector<HistogramBucket> buckets_;  // HistogramBucket wraps atomic — non-movable, pre-sized
     std::atomic<uint64_t> sum_{0};
     std::atomic<uint64_t> count_{0};
 };
