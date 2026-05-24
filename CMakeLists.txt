@@ -71,7 +71,7 @@ install(FILES
     DESTINATION .
 )
 
-# ─── CPack Packaging ─────────────────────────────────────────────────────────
+# CPack packaging
 set(CPACK_PACKAGE_NAME "ShakyLine")
 set(CPACK_PACKAGE_VENDOR "sarthakuwar")
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Programmable Network Fault Injection Proxy")
@@ -85,7 +85,7 @@ set(CPACK_PACKAGE_INSTALL_DIRECTORY "ShakyLine")
 set(CPACK_PACKAGE_EXECUTABLES "shakyline" "ShakyLine")
 
 if(WIN32)
-    # ZIP archive — just extract and run
+    # ZIP archive: extract and run.
     set(CPACK_GENERATOR "ZIP;NSIS")
 
     # NSIS Windows installer settings

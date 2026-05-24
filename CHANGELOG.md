@@ -7,13 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [1.0.0] - 2025-05-23
+## [1.0.0] - 2026-05-23
 
 ### Added
 - Initial release of ShakyLine
 - TCP proxy with deterministic fault injection via SplitMix64 RNG
 - Fault types: Latency, Jitter, Drop, Throttle, Corrupt, Stall, Half-close
-- Directional fault profiles (client→server / server→client)
+- Directional fault profiles (client-to-server / server-to-client)
 - Runtime control REST API on configurable port
 - Prometheus-compatible `/metrics` endpoint
 - 4-way half-close with correct TCP shutdown semantics

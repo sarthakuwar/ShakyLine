@@ -8,6 +8,7 @@
 #include "shakyline/Scheduler.hpp"
 #include "shakyline/SessionManager.hpp"
 
+#include <atomic>
 #include <csignal>
 #include <cstdlib>
 #include <iostream>
@@ -19,7 +20,7 @@ using namespace shakyline;
 
 namespace {
     std::atomic<bool> g_shutdown{false};
-    
+
     void signalHandler(int signal) {
         if (signal == SIGINT || signal == SIGTERM) {
             g_shutdown.store(true);
@@ -30,18 +31,18 @@ namespace {
         std::cout << "ShakyLine " << SHAKYLINE_VERSION << " - Programmable Network Fault Injection Proxy\n\n"
                   << "Usage: " << prog << " [OPTIONS]\n\n"
                   << "Options:\n"
-                  << "  --listen HOST:PORT     Listen address (default: 0.0.0.0:8080)\n"
-                  << "  --upstream HOST:PORT   Upstream target (default: 127.0.0.1:9000)\n"
-                  << "  --control PORT         Control API port (default: 9090)\n"
-                  << "  --seed NUMBER          Global RNG seed (default: random)\n"
-                  << "  --version, -v          Print version and exit\n"
-                  << "  --help, -h             Show this help\n\n"
+                  << "  --listen HOST:PORT      Listen address (default: 0.0.0.0:8080)\n"
+                  << "  --upstream HOST:PORT    Upstream target (default: 127.0.0.1:9000)\n"
+                  << "  --control PORT          Control API port (default: 9090)\n"
+                  << "  --seed NUMBER           Global RNG seed (default: random)\n"
+                  << "  --version, -v           Print version and exit\n"
+                  << "  --help, -h              Show this help\n\n"
                   << "Control API:\n"
-                  << "  POST /profiles/{name}  Update anomaly profile\n"
+                  << "  POST /profiles/{name}   Update anomaly profile\n"
                   << "  DELETE /profiles/{name} Delete profile\n"
-                  << "  GET /sessions          List active sessions\n"
-                  << "  GET /metrics           Prometheus metrics\n"
-                  << "  GET /health            Health check\n\n"
+                  << "  GET /sessions           List active sessions\n"
+                  << "  GET /metrics            Prometheus metrics\n"
+                  << "  GET /health             Health check\n\n"
                   << "Example:\n"
                   << "  " << prog << " --listen 0.0.0.0:8080 --upstream api.example.com:443\n";
     }
@@ -60,11 +61,10 @@ namespace {
 
 int main(int argc, char* argv[]) {
     ServerConfig config;
-    
-    // Parse command line arguments
+
     for (int i = 1; i < argc; ++i) {
         std::string arg = argv[i];
-        
+
         if (arg == "--help" || arg == "-h") {
             printUsage(argv[0]);
             return 0;
@@ -92,14 +92,13 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    // Generate random seed if not specified
     if (config.globalSeed == 0) {
         config.globalSeed = std::random_device{}();
     }
 
-    std::cout << "╔═══════════════════════════════════════════════════════╗\n"
-              << "║       ShakyLine " << SHAKYLINE_VERSION << " - Fault Injection Proxy        ║\n"
-              << "╚═══════════════════════════════════════════════════════╝\n\n";
+    std::cout << "========================================================\n"
+              << "  ShakyLine " << SHAKYLINE_VERSION << " - Fault Injection Proxy\n"
+              << "========================================================\n\n";
 
     std::cout << "Configuration:\n"
               << "  Listen:   " << config.listenHost << ":" << config.listenPort << "\n"
@@ -107,27 +106,24 @@ int main(int argc, char* argv[]) {
               << "  Control:  http://localhost:" << config.controlPort << "\n"
               << "  Seed:     " << config.globalSeed << "\n\n";
 
-    // Setup signal handlers
     std::signal(SIGINT, signalHandler);
     std::signal(SIGTERM, signalHandler);
 
     try {
-        // Create components
         EventLoop eventLoop;
         Scheduler scheduler(eventLoop.context());
         ConfigManager configManager;
         configManager.serverConfig() = config;
-        
+
         AnomalyEngine anomalyEngine(config.globalSeed);
-        
+
         auto sessionManager = SessionManager::create(
             eventLoop.context(), scheduler, anomalyEngine, configManager
         );
-        
+
         ProxyServer proxyServer(eventLoop.context(), sessionManager, config);
         ControlServer controlServer(configManager, sessionManager, config.controlPort);
 
-        // Start servers
         proxyServer.start();
         controlServer.start();
 
@@ -135,32 +131,27 @@ int main(int argc, char* argv[]) {
         std::cout << "Example commands:\n"
                   << "  curl http://localhost:" << config.controlPort << "/health\n"
                   << "  curl http://localhost:" << config.controlPort << "/metrics\n"
-                  << "  curl -X POST http://localhost:" << config.controlPort 
+                  << "  curl -X POST http://localhost:" << config.controlPort
                   << "/profiles/default -d '{\"latency_ms\":100}'\n\n";
 
-        // Run event loop
         eventLoop.runInBackground();
 
-        // Wait for shutdown signal
         while (!g_shutdown.load()) {
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
 
         std::cout << "\nShutting down...\n";
 
-        // Graceful shutdown sequence
         proxyServer.stop();
         controlServer.stop();
         sessionManager->shutdownAll();
-        
-        // Wait for drain (simple timeout)
+
         std::this_thread::sleep_for(std::chrono::seconds(2));
-        
+
         sessionManager->forceCloseAll();
         eventLoop.stop();
         eventLoop.join();
 
-        // Dump black box log
         globalLogger().dumpBlackBox();
 
         std::cout << "Shutdown complete.\n";
