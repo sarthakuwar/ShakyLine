@@ -33,6 +33,13 @@ _CPack_Packages/
 # Logs
 *.log
 
+# Next.js documentation portal
+website/.next/
+website/out/
+website/node_modules/
+website/.vercel/
+website/*.tsbuildinfo
+
 # IDE / editor files
 .vscode/
 .idea/

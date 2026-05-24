@@ -21,6 +21,8 @@ Deterministic chaos for TCP systems, built with C++20 and standalone Asio.
 
 Latest release: [ShakyLine v1.0.0](https://github.com/sarthakuwar/ShakyLine/releases/tag/v1.0.0)
 
+The Next.js documentation and download portal lives in [`website/`](website/). Deploy that directory directly on Vercel.
+
 | Package | Use this when | Download |
 | --- | --- | --- |
 | Windows installer | You want `shakyline` installed and added to `PATH` automatically. | [shakyline-1.0.0-windows-x64.exe](https://github.com/sarthakuwar/ShakyLine/releases/download/v1.0.0/shakyline-1.0.0-windows-x64.exe) |
